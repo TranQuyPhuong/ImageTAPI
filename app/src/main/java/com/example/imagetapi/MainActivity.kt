@@ -1,5 +1,9 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.imagetapi
 
+import android.graphics.Bitmap
+import android.os.AsyncTask
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -14,17 +18,23 @@ import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.net.MalformedURLException
+import java.net.URL
+
 
 class MainActivity : AppCompatActivity() {
 
     private val apiService = APIClient.client.create(APIInterface::class.java)
     private lateinit var imageAdapter: ImageAdapter
-    private lateinit var mOnLoadMoreListener: OnLoadMoreListener
     lateinit var photos: ArrayList<ResponsePhoto?>
+
+
+    private lateinit var myAsyncTask: AsyncTask<ArrayList<URL>, Int, List<Bitmap>>
+
 
     //lateinit var loadMorePhoto: ArrayList<ResponsePhoto?>
     private lateinit var mLayoutManager: RecyclerView.LayoutManager
-    lateinit var scrollListener: RecyclerViewLoadMoreScroll
+    private lateinit var scrollListener: RecyclerViewLoadMoreScroll
     var newPage = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +45,13 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Internet is not Available", Toast.LENGTH_SHORT).show()
         else
             loadPhotos()
+
+        //listener click download button
+        imgDownload.setOnClickListener {
+            // init Async Task
+            myAsyncTask = DownloadImage(this)
+            downloadImage()
+        }
 
     }
 
@@ -62,21 +79,34 @@ class MainActivity : AppCompatActivity() {
         setRVScrollListener()
     }
 
-    private fun downloadImage() {
-        imgDownload.setOnClickListener {
-            var listImage = imageAdapter.getAllData()
+    private fun allData(): ArrayList<ResponsePhoto?> = imageAdapter.getAllData()
 
+    private fun downloadImage() {
+        val urls: ArrayList<URL>? = ArrayList()
+        var data = allData()
+        for (i in 0 until data.size) {
+            if (data[i]!!.isDownload) {
+                val url: URL = stringToURL(data[i]?.url?.small)!!
+                urls?.add(url)
+            }
         }
+        if (urls!=null) myAsyncTask.execute(urls)
+    }
+
+    // Custom method to convert string to url
+    private fun stringToURL(urlString: String?): URL? {
+        try {
+            return URL(urlString)
+        } catch (e: MalformedURLException) {
+            e.printStackTrace()
+        }
+        return null
     }
 
     private fun setAdapter() {
         imageAdapter = ImageAdapter(photos)
         imageAdapter.notifyDataSetChanged()
         recyclerImage.adapter = imageAdapter
-    }
-
-    fun setOnLoadMoreListener(mOnLoadMoreListener: OnLoadMoreListener) {
-        this.mOnLoadMoreListener = mOnLoadMoreListener
     }
 
     private fun setLayoutManager() {
@@ -120,11 +150,6 @@ class MainActivity : AppCompatActivity() {
     fun loadMoreData(photos: ArrayList<ResponsePhoto?>) {
         //Add the Loading View
         imageAdapter.addLoadingView()
-//        //Create the loadMoreItemsCells Arraylist
-//        loadMorePhoto = ArrayList()
-//        //Use Handler if the items are loading too fast.
-//        //If you remove it, the data will load so fast that you can't even see the LoadingView
-//        loadMorePhoto.addAll(photos)
         //Remove the Loading View
         imageAdapter.removeLoadingView()
         //We adding the data to our main ArrayList
