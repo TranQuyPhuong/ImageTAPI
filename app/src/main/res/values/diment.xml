@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    // space view
+    <dimen name="space_4_dp">4dp</dimen>
+    <dimen name="space_5_dp">5dp</dimen>
+    <dimen name="space_8_dp">8dp</dimen>
+    <dimen name="space_18_dp">18dp</dimen>
+    <dimen name="space_24_dp">24dp</dimen>
+    <dimen name="space_36_dp">36dp</dimen>
+
+    // text size
+    <dimen name="text_size_12">12sp</dimen>
+    <dimen name="text_size_18">18sp</dimen>
+    <dimen name="text_size_24">24sp</dimen>
+    <dimen name="text_size_36">36sp</dimen>
+
+</resources>
