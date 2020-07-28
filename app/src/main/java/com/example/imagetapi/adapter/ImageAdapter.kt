@@ -1,7 +1,7 @@
 package com.example.imagetapi.adapter
 
 import android.os.Handler
-import android.util.SparseBooleanArray
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -93,8 +93,13 @@ class ImageAdapter(private var photos: ArrayList<ResponsePhoto?>) :
         }
     }
 
-    fun getAllData() : ArrayList<ResponsePhoto?>{
-        return photos
+    fun getChooseImages(): ArrayList<ResponsePhoto> {
+        val images = ArrayList<ResponsePhoto>()
+        for (i in 0 until photos.size) {
+            if (photos[i]!!.isDownload)
+                photos[i]?.let { images.add(it) }
+        }
+        return images
     }
 
     class ImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)

@@ -2,9 +2,8 @@
 
 package com.example.imagetapi
 
-import android.graphics.Bitmap
-import android.os.AsyncTask
 import android.os.Bundle
+import android.os.Handler
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
@@ -29,7 +28,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var photos: ArrayList<ResponsePhoto?>
 
 
-    private lateinit var myAsyncTask: AsyncTask<ArrayList<URL>, Int, List<Bitmap>>
+    lateinit var myAsyncTask: DownloadImage
 
 
     //lateinit var loadMorePhoto: ArrayList<ResponsePhoto?>
@@ -49,8 +48,9 @@ class MainActivity : AppCompatActivity() {
         //listener click download button
         imgDownload.setOnClickListener {
             // init Async Task
-            myAsyncTask = DownloadImage(this)
-            downloadImage()
+            val data = getChooseImages()
+            myAsyncTask = DownloadImage(this, data)
+            downloadImage(data)
         }
 
     }
@@ -79,18 +79,17 @@ class MainActivity : AppCompatActivity() {
         setRVScrollListener()
     }
 
-    private fun allData(): ArrayList<ResponsePhoto?> = imageAdapter.getAllData()
+    private fun getChooseImages(): ArrayList<ResponsePhoto> {
+        return imageAdapter.getChooseImages()
+    }
 
-    private fun downloadImage() {
-        val urls: ArrayList<URL>? = ArrayList()
-        var data = allData()
+    private fun downloadImage(data: ArrayList<ResponsePhoto>) {
+        val params = ArrayList<URL>()
         for (i in 0 until data.size) {
-            if (data[i]!!.isDownload) {
-                val url: URL = stringToURL(data[i]?.url?.small)!!
-                urls?.add(url)
-            }
+            val url: URL = stringToURL(data[i].url.small)!!
+            params.add(url)
         }
-        if (urls!=null) myAsyncTask.execute(urls)
+        myAsyncTask.execute(params)
     }
 
     // Custom method to convert string to url
@@ -150,17 +149,20 @@ class MainActivity : AppCompatActivity() {
     fun loadMoreData(photos: ArrayList<ResponsePhoto?>) {
         //Add the Loading View
         imageAdapter.addLoadingView()
-        //Remove the Loading View
-        imageAdapter.removeLoadingView()
-        //We adding the data to our main ArrayList
-        imageAdapter.addData(photos)
-        //Change the boolean isLoading to false
-        scrollListener.setLoaded()
-        //Update the recyclerView in the main thread
-        recyclerImage.post {
-            imageAdapter.notifyDataSetChanged()
-        }
-        newPage += 1
+        //use handler to see progressbar show (because too fast)
+        Handler().postDelayed({
+            //Remove the Loading View
+            imageAdapter.removeLoadingView()
+            //We adding the data to our main ArrayList
+            imageAdapter.addData(photos)
+            //Change the boolean isLoading to false
+            scrollListener.setLoaded()
+            //Update the recyclerView in the main thread
+            recyclerImage.post {
+                imageAdapter.notifyDataSetChanged()
+            }
+            newPage += 1
+        }, 2000)
 
     }
 

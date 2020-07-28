@@ -2,48 +2,43 @@
 
 package com.example.imagetapi
 
-import android.annotation.SuppressLint
 import android.app.ProgressDialog
-import android.content.ContentValues
-import android.content.Context
+import android.content.Context.MODE_PRIVATE
+import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.AsyncTask
+import android.os.Environment
 import android.provider.MediaStore
-import android.provider.MediaStore.Images
-import java.io.BufferedInputStream
-import java.io.ByteArrayOutputStream
-import java.io.IOException
-import java.io.InputStream
+import android.util.Log
+import com.example.imagetapi.datamannage.dataclass.ResponsePhoto
+import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
 
 
-class DownloadImage(private val context: MainActivity) :
+class DownloadImage(private val context: MainActivity, private val images: ArrayList<ResponsePhoto>) :
     AsyncTask<ArrayList<URL>, Int, List<Bitmap>>() {
 
     private lateinit var mProgressDialog: ProgressDialog
 
     override fun onProgressUpdate(vararg values: Int?) {
-        super.onProgressUpdate(*values)
         mProgressDialog.progress = values[0]!!
     }
 
     override fun onPostExecute(result: List<Bitmap>?) {
-        super.onPostExecute(result)
-        // Hide the progress dialog
-
-        // Hide the progress dialog
         mProgressDialog.dismiss()
-
+        context.myAsyncTask.cancel(false)
         // Loop through the bitmap list
         for (i in result!!.indices) {
             val bitmap = result[i]
+            val nameImage = images[i].id
             // Save the bitmap to internal storage
-            val imageInternalUri: Uri = saveImageToInternalStorage(bitmap, i)
-            // Display bitmap from internal storage
-            addImageToGallery(imageInternalUri)
+            addImage(bitmap, nameImage)
+//            saveImageToInternalStorage(bitmap, nameImage)
+//            addImageToGallery(context, bitmap, images[i].id)
         }
     }
 
@@ -90,17 +85,15 @@ class DownloadImage(private val context: MainActivity) :
     }
 
     override fun onCancelled(result: List<Bitmap>?) {
-        super.onCancelled(result)
     }
 
     override fun onCancelled() {
-        super.onCancelled()
     }
 
     override fun onPreExecute() {
         initLoadingDialog()
-        mProgressDialog.progress = 0
         mProgressDialog.show()
+        mProgressDialog.progress = 0
     }
 
     private fun initLoadingDialog() {
@@ -117,30 +110,76 @@ class DownloadImage(private val context: MainActivity) :
     }
 
     // Custom method to save a bitmap into internal storage
-    private fun saveImageToInternalStorage(bitmap: Bitmap, index: Int): Uri {
-        val bytes = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes)
-        val path: String = Images.Media.insertImage(
-            context.contentResolver,
-            bitmap,
-            "Image TAPI",
+    private fun saveImageToInternalStorage(bitmap: Bitmap, id: String): Uri {
+
+        // Initialize ContextWrapper
+        val wrapper = ContextWrapper(context.applicationContext)
+        // Initializing a new file
+        // The bellow line return a directory in internal storage
+        val directory: File = wrapper.getDir("ImageTAPI", MODE_PRIVATE)
+        // Create a file to save the image
+        val file = File(directory, "$id.jpg")
+
+        try {
+            // Initialize a new OutputStream
+            lateinit var stream: OutputStream
+
+            // If the output file exists, it can be replaced or appended to it
+            stream = FileOutputStream(file)
+
+            // Compress the bitmap
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+
+            // Flushes the stream
+            stream.flush()
+
+            // Closes the stream
+            stream.close()
+        } catch (e: IOException) // Catch the exception
+        {
+            e.printStackTrace()
+        }
+        // Parse the gallery image url to uri
+        // Return the saved image Uri
+        // display image to gallery
+        MediaScannerConnection.scanFile(
+            context,
+            arrayOf(file.path),
+            arrayOf("image/jpeg"),
             null
         )
-        return Uri.parse(path)
+        return Uri.parse(file.absolutePath)
     }
 
-    // Custom method to add a new image view using uri
-    private fun addImageToGallery(uri: Uri?) {
-        addImageToGallery(uri?.path, context.applicationContext)
+    private fun addImageToGallery(context: MainActivity, bitmap: Bitmap, photoName: String) {
+        val root: String =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString() + "/ImageTAPI"
+        val myDir = File(root)
+        myDir.mkdirs()
+        val fileName = "$photoName.png"
+        val file = File(myDir, fileName)
+        Log.d("msg", file.absolutePath)
+        if (file.exists()) file.delete()
+        try {
+            val out = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 90, out)
+            out.flush()
+            out.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // display image to gallery
+        MediaScannerConnection.scanFile(
+            context,
+            arrayOf(file.path),
+            arrayOf("image/jpeg"),
+            null
+        )
     }
 
-    @SuppressLint("InlinedApi")
-    fun addImageToGallery(filePath: String?, context: Context) {
-        val values = ContentValues()
-        values.put(Images.Media.DATE_TAKEN, System.currentTimeMillis())
-        values.put(Images.Media.MIME_TYPE, "image/jpeg")
-        values.put(MediaStore.MediaColumns.DATA, filePath)
-        context.contentResolver.insert(Images.Media.EXTERNAL_CONTENT_URI, values)
+    private fun addImage(bitmap: Bitmap, nameImage: String) {
+        MediaStore.Images.Media.insertImage(context.contentResolver, bitmap, nameImage , null)
     }
 
 }
