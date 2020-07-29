@@ -2,6 +2,7 @@
 
 package com.example.imagetapi
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.widget.Toast
@@ -51,6 +52,11 @@ class MainActivity : AppCompatActivity() {
             val data = getChooseImages()
             myAsyncTask = DownloadImage(this, data)
             downloadImage(data)
+        }
+        //listener click go to gallery
+        imgGoToGallery.setOnClickListener {
+            val intent = Intent(this, GalleryActivity::class.java)
+            startActivity(intent)
         }
 
     }
@@ -162,7 +168,7 @@ class MainActivity : AppCompatActivity() {
                 imageAdapter.notifyDataSetChanged()
             }
             newPage += 1
-        }, 2000)
+        }, 1000)
 
     }
 

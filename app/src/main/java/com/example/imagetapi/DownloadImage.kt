@@ -5,6 +5,7 @@ package com.example.imagetapi
 import android.app.ProgressDialog
 import android.content.Context.MODE_PRIVATE
 import android.content.ContextWrapper
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaScannerConnection
@@ -19,7 +20,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 
-class DownloadImage(private val context: MainActivity, private val images: ArrayList<ResponsePhoto>) :
+class DownloadImage(
+    private val context: MainActivity,
+    private val images: ArrayList<ResponsePhoto>
+) :
     AsyncTask<ArrayList<URL>, Int, List<Bitmap>>() {
 
     private lateinit var mProgressDialog: ProgressDialog
@@ -35,10 +39,10 @@ class DownloadImage(private val context: MainActivity, private val images: Array
         for (i in result!!.indices) {
             val bitmap = result[i]
             val nameImage = images[i].id
-            // Save the bitmap to internal storage
+            // Save the bitmap to media storage
             addImage(bitmap, nameImage)
-//            saveImageToInternalStorage(bitmap, nameImage)
-//            addImageToGallery(context, bitmap, images[i].id)
+            //saveImageToInternalStorage(bitmap, nameImage)
+            //addImageToGallery(context, bitmap, images[i].id)
         }
     }
 
@@ -119,6 +123,7 @@ class DownloadImage(private val context: MainActivity, private val images: Array
         val directory: File = wrapper.getDir("ImageTAPI", MODE_PRIVATE)
         // Create a file to save the image
         val file = File(directory, "$id.jpg")
+        Log.d("msg", file.absolutePath)
 
         try {
             // Initialize a new OutputStream
@@ -135,27 +140,27 @@ class DownloadImage(private val context: MainActivity, private val images: Array
 
             // Closes the stream
             stream.close()
+            // display image to gallery
+            MediaScannerConnection.scanFile(
+                context,
+                arrayOf(file.path),
+                arrayOf("image/jpeg"),
+                null
+            )
         } catch (e: IOException) // Catch the exception
         {
             e.printStackTrace()
         }
-        // Parse the gallery image url to uri
-        // Return the saved image Uri
-        // display image to gallery
-        MediaScannerConnection.scanFile(
-            context,
-            arrayOf(file.path),
-            arrayOf("image/jpeg"),
-            null
-        )
         return Uri.parse(file.absolutePath)
     }
 
     private fun addImageToGallery(context: MainActivity, bitmap: Bitmap, photoName: String) {
         val root: String =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString() + "/ImageTAPI"
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                .toString() + "/ImageTAPI"
         val myDir = File(root)
-        myDir.mkdirs()
+        if (!myDir.exists())
+            myDir.mkdirs()
         val fileName = "$photoName.png"
         val file = File(myDir, fileName)
         Log.d("msg", file.absolutePath)
@@ -165,21 +170,15 @@ class DownloadImage(private val context: MainActivity, private val images: Array
             bitmap.compress(Bitmap.CompressFormat.PNG, 90, out)
             out.flush()
             out.close()
+            // display image to gallery
+            context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)))
         } catch (e: Exception) {
             e.printStackTrace()
         }
-
-        // display image to gallery
-        MediaScannerConnection.scanFile(
-            context,
-            arrayOf(file.path),
-            arrayOf("image/jpeg"),
-            null
-        )
     }
 
     private fun addImage(bitmap: Bitmap, nameImage: String) {
-        MediaStore.Images.Media.insertImage(context.contentResolver, bitmap, nameImage , null)
+        MediaStore.Images.Media.insertImage(context.contentResolver, bitmap, nameImage, null)
     }
 
 }

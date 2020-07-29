@@ -1,7 +1,5 @@
 package com.example.imagetapi.adapter
 
-import android.os.Handler
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -79,10 +77,8 @@ class ImageAdapter(private var photos: ArrayList<ResponsePhoto?>) :
 
     fun addLoadingView() {
         //add loading item
-        Handler().post {
-            photos.add(null)
-            notifyItemInserted(photos.size - 1)
-        }
+        photos.add(null)
+        notifyItemInserted(photos.size - 1)
     }
 
     fun removeLoadingView() {
