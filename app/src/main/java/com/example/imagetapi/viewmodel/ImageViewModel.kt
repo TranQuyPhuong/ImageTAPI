@@ -1,25 +1,28 @@
 package com.example.imagetapi.viewmodel
 
 import android.annotation.SuppressLint
-import android.app.Application
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
-class ImageViewModel(private val context: Application) : ViewModel(), CoroutineScope {
+@Suppress("DEPRECATION")
+class ImageViewModel(private val context: Context) : ViewModel(), CoroutineScope,
+    ViewModelProvider.Factory {
 
     private val job = Job()
     override val coroutineContext: CoroutineContext
         get() = job + Dispatchers.Main
 
-    private var imagesLiveData: MutableLiveData<List<String>> = MutableLiveData()
+    private var imagesLiveData: MutableLiveData<ArrayList<String>> = MutableLiveData()
 
-    fun getImageList(): MutableLiveData<List<String>> {
+    fun getImageList(): MutableLiveData<ArrayList<String>> {
         return imagesLiveData
     }
 
@@ -35,20 +38,21 @@ class ImageViewModel(private val context: Application) : ViewModel(), CoroutineS
         val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val cursor: Cursor?
         val columnIndexData: Int
-        val columnIndexFolderName: Int
         val listOfAllImages = ArrayList<String>()
-        var absolutePathOfImage: String? = null
+        lateinit var absolutePathOfImage: String
 
         val projection =
-            arrayOf(MediaStore.MediaColumns.DATA, MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                arrayOf(MediaStore.MediaColumns.DATA, MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+            } else {
+                arrayOf(MediaStore.MediaColumns.DATA, MediaStore.Images.Media.DISPLAY_NAME)
+            }
 
-//        cursor = AppController.globalContentResolvere!!.query(uri, projection, null, null, null)
         cursor =
             context.contentResolver!!.query(uri, projection, null, null, null)
 
         columnIndexData = cursor!!.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
-        columnIndexFolderName = cursor
-            .getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+
         while (cursor.moveToNext()) {
             absolutePathOfImage = cursor.getString(columnIndexData)
             listOfAllImages.add(absolutePathOfImage)
@@ -64,4 +68,7 @@ class ImageViewModel(private val context: Application) : ViewModel(), CoroutineS
         }
     }
 
+    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+        return modelClass.getConstructor(Context::class.java).newInstance(context)
+    }
 }
