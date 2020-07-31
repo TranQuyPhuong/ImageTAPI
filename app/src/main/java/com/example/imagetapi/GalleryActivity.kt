@@ -59,7 +59,6 @@ class GalleryActivity : AppCompatActivity() {
                 true
             } else {
 
-
                 ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE)
                 false
             }
