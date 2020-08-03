@@ -2,11 +2,17 @@
 
 package com.example.imagetapi
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.imagetapi.adapter.ImageAdapter
@@ -14,44 +20,69 @@ import com.example.imagetapi.datamannage.APIClient
 import com.example.imagetapi.datamannage.APIInterface
 import com.example.imagetapi.datamannage.dataclass.ResponsePhoto
 import com.example.imagetapi.global.checkConnectInternet
+import com.example.imagetapi.viewmodel.ImageViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
 import java.net.MalformedURLException
 import java.net.URL
 
+private const val REQUEST_EXTERNAL_STORAGE = 1
+private val PERMISSIONS_STORAGE = arrayOf(
+    Manifest.permission.READ_EXTERNAL_STORAGE,
+    Manifest.permission.WRITE_EXTERNAL_STORAGE
+)
 
+@Suppress("DEPRECATED_IDENTITY_EQUALS", "UNREACHABLE_CODE")
 class MainActivity : AppCompatActivity() {
 
     private val apiService = APIClient.client.create(APIInterface::class.java)
     private lateinit var imageAdapter: ImageAdapter
     lateinit var photos: ArrayList<ResponsePhoto?>
 
-
     lateinit var myAsyncTask: DownloadImage
 
-
-    //lateinit var loadMorePhoto: ArrayList<ResponsePhoto?>
     private lateinit var mLayoutManager: RecyclerView.LayoutManager
     private lateinit var scrollListener: RecyclerViewLoadMoreScroll
+
+    //instance ImageViewModel
+    private lateinit var imageViewModel: ImageViewModel
+
+    //list name image download
+    private var nameImages: ArrayList<String>? = null
+
+    //number page default = 1
     var newPage = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        if (!checkConnectInternet(this))
-            Toast.makeText(this, "Internet is not Available", Toast.LENGTH_SHORT).show()
-        else
-            loadPhotos()
+        //init view model
+        val factory = ImageViewModel(applicationContext)
+        imageViewModel =
+            ViewModelProviders.of(this, factory).get(ImageViewModel::class.java)
+
+        if (requestPermission()) {
+            imgDownload.visibility = View.VISIBLE
+            this.nameImages = getNameImageListDownload()
+            if (!checkConnectInternet(this))
+                Toast.makeText(this, "Internet is not Available", Toast.LENGTH_SHORT).show()
+            else
+                loadPhotos()
+        }
 
         //listener click download button
         imgDownload.setOnClickListener {
             // init Async Task
             val data = getChooseImages()
-            myAsyncTask = DownloadImage(this, data)
-            downloadImage(data)
+            if (data.size != 0) {
+                myAsyncTask = DownloadImage(this, data)
+                downloadImage(data)
+            } else
+                Toast.makeText(this, "Choose new image to download", Toast.LENGTH_SHORT).show()
         }
         //listener click go to gallery
         imgGoToGallery.setOnClickListener {
@@ -72,11 +103,42 @@ class MainActivity : AppCompatActivity() {
                 response: Response<ArrayList<ResponsePhoto?>>
             ) {
                 photos = response.body()!!
+                compareImageDownloaded(photos)
                 initComponentView()
                 newPage += 1
             }
 
         })
+    }
+
+    private fun compareImageDownloaded(images: ArrayList<ResponsePhoto?>) {
+        if (nameImages != null) {
+            for (j in 0 until nameImages!!.size) {
+                for (i in 0 until images.size) {
+                    if (images[i]?.id?.compareTo(nameImages!![j].replace(".jpg", "")) == 0) {
+                        images[i]?.isDownload = true
+                        break
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getNameImageListDownload(): ArrayList<String>? {
+        var nameImages: ArrayList<String>? = null
+        val pathImageList = getPathImageListDownload()
+        if (pathImageList != null) {
+            nameImages = ArrayList()
+            for (i in 0 until pathImageList.size) {
+                val file = File(pathImageList[i])
+                nameImages.add(file.name)
+            }
+        }
+        return nameImages
+    }
+
+    private fun getPathImageListDownload(): ArrayList<String>? {
+        return imageViewModel.loadImagesFromSDCard()
     }
 
     private fun initComponentView() {
@@ -86,7 +148,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getChooseImages(): ArrayList<ResponsePhoto> {
-        return imageAdapter.getChooseImages()
+        // list image choose to download
+        val param = imageAdapter.getChooseImages()
+        val imageDownloaded = getNameImageListDownload()
+        if (imageDownloaded != null || imageDownloaded!!.size != 0) {
+            for (i in 0 until imageDownloaded!!.size) {
+                for (j in 0 until param.size) {
+                    if (param[j].id.compareTo(imageDownloaded!![i].replace(".jpg", "")) == 0) {
+                        param.removeAt(j)
+                        break
+                    }
+                }
+            }
+
+        }
+
+        return param
     }
 
     private fun downloadImage(data: ArrayList<ResponsePhoto>) {
@@ -145,7 +222,10 @@ class MainActivity : AppCompatActivity() {
                 call: Call<ArrayList<ResponsePhoto?>>,
                 response: Response<ArrayList<ResponsePhoto?>>
             ) {
-                response.body()?.let { loadMoreData(it) }
+                response.body()?.let {
+                    compareImageDownloaded(it)
+                    loadMoreData(it)
+                }
 
             }
 
@@ -170,6 +250,47 @@ class MainActivity : AppCompatActivity() {
             newPage += 1
         }, 1000)
 
+    }
+
+    private fun requestPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            true
+        } else {
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED
+            ) {
+                true
+            } else {
+
+                ActivityCompat.requestPermissions(
+                    this,
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+                )
+                false
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        when (requestCode) {
+            REQUEST_EXTERNAL_STORAGE -> {
+                if (grantResults[0] === PackageManager.PERMISSION_GRANTED) {
+                    imgDownload.visibility = View.VISIBLE
+                    this.nameImages = getNameImageListDownload()
+                    if (!checkConnectInternet(this))
+                        Toast.makeText(this, "Internet is not Available", Toast.LENGTH_SHORT).show()
+                    else
+                        loadPhotos()
+
+                }
+            }
+            else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        }
     }
 
 }

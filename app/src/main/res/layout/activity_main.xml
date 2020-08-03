@@ -13,10 +13,10 @@
         android:layout_width="@dimen/space_36_dp"
         android:layout_height="@dimen/space_36_dp"
         android:src="@drawable/ic_baseline_cloud_download_24"
-        android:backgroundTint="@null"
         android:background="?attr/selectableItemBackgroundBorderless"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent"
+        android:visibility="gone"/>
 
     <ImageButton
         android:id="@+id/imgGoToGallery"
@@ -24,15 +24,14 @@
         android:layout_height="wrap_content"
         android:background="?attr/selectableItemBackgroundBorderless"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/imgDownload"
-        app:layout_constraintBottom_toBottomOf="@+id/imgDownload"
+        app:layout_constraintTop_toTopOf="parent"
         android:src="@drawable/ic_baseline_navigate_next_24"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerImage"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@+id/imgDownload"
+        app:layout_constraintTop_toBottomOf="@+id/imgGoToGallery"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

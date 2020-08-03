@@ -31,7 +31,8 @@ class GalleryImageAdapter(private val context: PhotosFragment, private var paths
         Picasso.get().load(file).resize(1000, 1000).centerCrop().into(holder.itemView.imgImageGallery)
 
         holder.itemView.setOnClickListener {
-            context.editImageDialog(paths, position)
+            //context.editImageDialog(paths, position)
+            context.showDialog(paths[position], position)
         }
 
     }

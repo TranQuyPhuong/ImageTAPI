@@ -17,10 +17,11 @@ import kotlinx.android.synthetic.main.item_loading.view.*
 import java.io.File
 
 
-class PhotosFragment : Fragment() {
+class PhotosFragment : Fragment(), ImageDialogFragment.ListenerActionDetailImage{
 
     var paths: ArrayList<String> = ArrayList()
     lateinit var galleryAdapter: GalleryImageAdapter
+    lateinit var dialog: ImageDialogFragment
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,46 +69,18 @@ class PhotosFragment : Fragment() {
         recyclerImageGallery.adapter = galleryAdapter
     }
 
-    fun editImageDialog(paths: ArrayList<String>, position: Int) {
-//        val displayRectangle = Rect()
-//        var window = activity!!.window
-//        window.decorView.getWindowVisibleDisplayFrame(displayRectangle)
-        val builder =
-            AlertDialog.Builder(context, R.style.AppTheme)
-
-        val dialogView = this.layoutInflater.inflate(R.layout.edit_image, fragmentPhoto, false)
-
-//        dialogView.minimumWidth = (displayRectangle.width() * 1f).toInt()
-//        dialogView.minimumHeight = (displayRectangle.height() * 1f).toInt()
-        builder.setView(dialogView)
-
-        val file = File(paths[position])
-        Picasso.get().load(file).into(dialogView.editImage, object : Callback {
-            override fun onSuccess() {
-                dialogView.itemLoadingMain.visibility = View.GONE
-            }
-
-            override fun onError(e: Exception?) {
-                dialogView.itemLoadingMain.visibility = View.GONE
-            }
-
-        })
-
-        val editDialog = builder.create()
-
-        dialogView.imbDelete.setOnClickListener {
-            paths.removeAt(position)
-            galleryAdapter.notifyItemRemoved(position)
-            galleryAdapter.notifyItemChanged(position, paths.size)
-            editDialog.dismiss()
-        }
-
-        dialogView.imbCancel.setOnClickListener {
-            editDialog.dismiss()
-        }
-
-        editDialog.show()
-
+    fun showDialog(path : String, position: Int) {
+        dialog = ImageDialogFragment.newInstance(path, position)
+        dialog.createInstanceListener(this)
+        fragmentManager?.beginTransaction()
+            ?.replace(R.id.frameContainerGallery, dialog)
+            ?.addToBackStack("dialog")
+            ?.commit()
     }
 
+    override fun removeImage(position: Int) {
+        paths.removeAt(position)
+        galleryAdapter.notifyItemRemoved(position)
+        galleryAdapter.notifyItemChanged(position, paths.size)
+    }
 }
