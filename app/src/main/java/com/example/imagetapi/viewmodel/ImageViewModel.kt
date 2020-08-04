@@ -5,11 +5,14 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.*
+import java.io.File
 import kotlin.coroutines.CoroutineContext
 
 @Suppress("DEPRECATION")
@@ -58,6 +61,18 @@ class ImageViewModel(private val context: Context) : ViewModel(), CoroutineScope
             listOfAllImages.add(absolutePathOfImage)
         }
         return listOfAllImages
+    }
+
+    fun loadImage() {
+        val path: String =
+            Environment.getExternalStorageDirectory().toString() + "/Pictures"
+        Log.d("Files", "Path: $path")
+        val directory = File(path)
+        val files: Array<File> = directory.listFiles()
+        Log.d("Files", "Size: " + files.size)
+        for (i in files.indices) {
+            Log.d("Files", "FileName:" + files[i].name)
+        }
     }
 
     fun getAllImages() {

@@ -36,6 +36,7 @@ class GalleryActivity : AppCompatActivity() {
         imageViewModel.getImageList().observe(this, valueObserver)
 
         if (requestPermission()) {
+            imageViewModel.loadImage()
             val paths = imageViewModel.loadImagesFromSDCard()
             addFragment(paths)
         }

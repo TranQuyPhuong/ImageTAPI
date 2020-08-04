@@ -1,7 +1,6 @@
 package com.example.imagetapi.fragment
 
 import android.os.Bundle
-import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -35,15 +34,29 @@ class ImageDialogFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
-
-        val contextThemeWrapper = ContextThemeWrapper(activity, R.style.MyCustomTheme)
-        return inflater.cloneInContext(contextThemeWrapper)
-            .inflate(R.layout.edit_image, container, false)
+        return inflater.inflate(R.layout.edit_image, container, false)
 
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val path = arguments?.getString("linkPath")
+        position = arguments?.getInt("position")!!
+
+        if (path != null) {
+            Picasso.get().load(File(path)).into(editImage, object : Callback {
+                override fun onSuccess() {
+                    if (itemLoadingMain != null)
+                        itemLoadingMain.visibility = View.GONE
+                }
+
+                override fun onError(e: Exception?) {
+                    if (itemLoadingMain != null)
+                        itemLoadingMain.visibility = View.GONE
+                }
+
+            })
+        }
 
         imbCancel.setOnClickListener {
             activity?.supportFragmentManager?.popBackStack()
@@ -53,23 +66,6 @@ class ImageDialogFragment : Fragment() {
             activity?.supportFragmentManager?.popBackStack()
             mListener.removeImage(position)
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        val path = arguments?.getString("linkPath")
-        position = arguments?.getInt("position")!!
-
-        Picasso.get().load(File(path)).into(editImage, object : Callback {
-            override fun onSuccess() {
-                itemLoadingMain.visibility = View.GONE
-            }
-
-            override fun onError(e: Exception?) {
-                itemLoadingMain.visibility = View.GONE
-            }
-
-        })
     }
 
     fun createInstanceListener(listener: ListenerActionDetailImage) {

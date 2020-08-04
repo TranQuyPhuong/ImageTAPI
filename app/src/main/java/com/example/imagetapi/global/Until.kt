@@ -3,6 +3,7 @@ package com.example.imagetapi.global
 import android.content.Context
 import android.net.ConnectivityManager
 import androidx.appcompat.app.AppCompatActivity
+import java.io.File
 
 //view type loading
 const val VIEW_TYPE_LOADING = 1
@@ -17,4 +18,11 @@ fun checkConnectInternet(activity: AppCompatActivity): Boolean {
         activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     val networkInfo = connectivityManager.activeNetworkInfo
     return networkInfo != null && networkInfo.isConnected
+}
+
+fun createFolder(context: Context): File {
+    val dir = File(context.filesDir, "ImageTAPI")
+    if (!dir.exists())
+        dir.mkdir()
+    return dir
 }

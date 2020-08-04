@@ -9,12 +9,15 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaScannerConnection
+import android.media.MediaScannerConnection.OnScanCompletedListener
 import android.net.Uri
 import android.os.AsyncTask
+import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import com.example.imagetapi.datamannage.dataclass.ResponsePhoto
+import com.example.imagetapi.global.createFolder
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
@@ -40,9 +43,10 @@ class DownloadImage(
             val bitmap = result[i]
             val nameImage = images[i].id
             // Save the bitmap to media storage
-            addImage(bitmap, nameImage)
+            //addImage(bitmap, nameImage)
             //saveImageToInternalStorage(bitmap, nameImage)
             //addImageToGallery(context, bitmap, images[i].id)
+            addImageIntoGallery(bitmap, nameImage)
         }
     }
 
@@ -179,6 +183,47 @@ class DownloadImage(
 
     private fun addImage(bitmap: Bitmap, nameImage: String) {
         MediaStore.Images.Media.insertImage(context.contentResolver, bitmap, nameImage, null)
+    }
+
+    private fun addImageIntoGallery(bitmap: Bitmap, nameImage: String) {
+        var fileDir = createFolder(context)
+        var file = File(fileDir, "${nameImage}.jpg")
+        if (file.exists()) file.delete()
+        try {
+            val out = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 90, out)
+            out.flush()
+            out.close()
+            // display image to gallery
+            sendImageToMediaStore(fileDir)
+            //send(file)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun sendImageToMediaStore(outputFile : File) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            val scanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
+            val contentUri = Uri.fromFile(outputFile)
+            scanIntent.data = contentUri
+            context.sendBroadcast(scanIntent)
+        } else {
+            val intent = Intent(
+                Intent.ACTION_MEDIA_MOUNTED,
+                Uri.parse("file://" + Environment.getExternalStorageDirectory())
+            )
+            context.sendBroadcast(intent)
+        }
+    }
+
+    private fun send(outputFile: File) {
+        MediaScannerConnection.scanFile(context, arrayOf(
+            outputFile.absolutePath
+        ),
+            null, OnScanCompletedListener { path, uri ->
+                Log.d("msg", "$path $uri")
+            })
     }
 
 }

@@ -1,18 +1,19 @@
 package com.example.imagetapi.adapter
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.imagetapi.R
-import com.example.imagetapi.fragment.PhotosFragment
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.item_image_gallery.view.*
 import java.io.File
 
 
-class GalleryImageAdapter(private val context: PhotosFragment, private var paths: ArrayList<String>) :
+class GalleryImageAdapter(
+    private val listener: ItemImageListener,
+    private var paths: ArrayList<String>
+) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ImageHolder {
@@ -28,16 +29,19 @@ class GalleryImageAdapter(private val context: PhotosFragment, private var paths
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val file = File(paths[position])
 
-        Picasso.get().load(file).resize(1000, 1000).centerCrop().into(holder.itemView.imgImageGallery)
+        Picasso.get().load(file).resize(1000, 1000).centerCrop()
+            .into(holder.itemView.imgImageGallery)
 
         holder.itemView.setOnClickListener {
-            //context.editImageDialog(paths, position)
-            context.showDialog(paths[position], position)
+            listener.clickItemImage(position)
         }
 
     }
 
-    class ImageHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class ImageHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+
+    interface ItemImageListener {
+        fun clickItemImage(position: Int)
     }
 
 }

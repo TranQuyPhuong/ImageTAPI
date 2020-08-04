@@ -7,19 +7,4 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="CustomAlertDialog" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="android:windowBackground">@drawable/popup_background</item>
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">match_parent</item>
-    </style>
-
-    <style name="MyCustomTheme" parent="Theme.AppCompat.Dialog.Alert">
-        <item name="android:windowAnimationStyle">@style/MyAnimation.Window</item>
-    </style>
-
-    <style name="MyAnimation.Window" parent="@android:style/Theme.Dialog">
-        <item name="android:windowEnterAnimation">@anim/anim_in</item>
-        <item name="android:windowExitAnimation">@anim/anim_out</item>
-    </style>
-
 </resources>
