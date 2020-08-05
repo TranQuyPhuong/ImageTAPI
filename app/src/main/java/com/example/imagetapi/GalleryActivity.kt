@@ -30,13 +30,13 @@ class GalleryActivity : AppCompatActivity() {
         val factory = ImageViewModel(applicationContext)
         imageViewModel = ViewModelProviders.of(this, factory).get(ImageViewModel::class.java)
         val valueObserver = Observer<ArrayList<String>> {
-            imageViewModel.getAllImages()
+//            imageViewModel.getAllImages()
         }
 
         imageViewModel.getImageList().observe(this, valueObserver)
 
         if (requestPermission()) {
-            imageViewModel.loadImage()
+//            imageViewModel.loadImage()
             val paths = imageViewModel.loadImagesFromSDCard()
             addFragment(paths)
         }

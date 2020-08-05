@@ -127,6 +127,7 @@ class MainActivity : AppCompatActivity() {
     private fun getNameImageListDownload(): ArrayList<String>? {
         var nameImages: ArrayList<String>? = null
         val pathImageList = getPathImageListDownload()
+
         if (pathImageList != null) {
             nameImages = ArrayList()
             for (i in 0 until pathImageList.size) {
@@ -152,9 +153,9 @@ class MainActivity : AppCompatActivity() {
         val param = imageAdapter.getChooseImages()
         val imageDownloaded = getNameImageListDownload()
         if (imageDownloaded != null || imageDownloaded!!.size != 0) {
-            for (i in 0 until imageDownloaded!!.size) {
+            for (i in 0 until imageDownloaded.size) {
                 for (j in 0 until param.size) {
-                    if (param[j].id.compareTo(imageDownloaded!![i].replace(".jpg", "")) == 0) {
+                    if (param[j].id.compareTo(imageDownloaded[i].replace(".jpg", "")) == 0) {
                         param.removeAt(j)
                         break
                     }

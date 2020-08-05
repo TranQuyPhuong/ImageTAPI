@@ -65,8 +65,10 @@ class PhotosFragment : Fragment(),
         dialog = ImageDialogFragment.newInstance(path, position)
         dialog.createInstanceListener(this)
         activity?.supportFragmentManager?.beginTransaction()
-            ?.setCustomAnimations(android.R.anim.fade_in,
-                android.R.anim.fade_out)
+            ?.setCustomAnimations(
+                android.R.anim.fade_in,
+                android.R.anim.fade_out
+            )
             ?.add(R.id.frameContainerGallery, dialog)
             ?.addToBackStack("dialog")
             ?.commit()

@@ -3,22 +3,22 @@
 package com.example.imagetapi
 
 import android.app.ProgressDialog
-import android.content.Context.MODE_PRIVATE
-import android.content.ContextWrapper
-import android.content.Intent
+import android.content.ContentResolver
+import android.content.ContentValues
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Bitmap.CompressFormat
 import android.graphics.BitmapFactory
-import android.media.MediaScannerConnection
-import android.media.MediaScannerConnection.OnScanCompletedListener
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import com.example.imagetapi.datamannage.dataclass.ResponsePhoto
-import com.example.imagetapi.global.createFolder
-import java.io.*
+import java.io.BufferedInputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -43,10 +43,8 @@ class DownloadImage(
             val bitmap = result[i]
             val nameImage = images[i].id
             // Save the bitmap to media storage
-            //addImage(bitmap, nameImage)
-            //saveImageToInternalStorage(bitmap, nameImage)
-            //addImageToGallery(context, bitmap, images[i].id)
-            addImageIntoGallery(bitmap, nameImage)
+            saveBitmap(bitmap = bitmap, displayName = "${nameImage}.jpg")
+
         }
     }
 
@@ -117,113 +115,43 @@ class DownloadImage(
         mProgressDialog.setCancelable(true)
     }
 
-    // Custom method to save a bitmap into internal storage
-    private fun saveImageToInternalStorage(bitmap: Bitmap, id: String): Uri {
-
-        // Initialize ContextWrapper
-        val wrapper = ContextWrapper(context.applicationContext)
-        // Initializing a new file
-        // The bellow line return a directory in internal storage
-        val directory: File = wrapper.getDir("ImageTAPI", MODE_PRIVATE)
-        // Create a file to save the image
-        val file = File(directory, "$id.jpg")
-        Log.d("msg", file.absolutePath)
-
+    @Throws(IOException::class)
+    private fun saveBitmap(contextParam: Context = context, bitmap: Bitmap,
+                           format: CompressFormat = CompressFormat.PNG,
+                           mimeType: String = "image/jpeg",
+                           displayName: String) {
+        val relativeLocation = Environment.DIRECTORY_PICTURES
+        val contentValues = ContentValues()
+        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, relativeLocation)
+        }
+        val resolver: ContentResolver = contextParam.contentResolver
+        var stream: OutputStream? = null
+        var uri: Uri? = null
         try {
-            // Initialize a new OutputStream
-            lateinit var stream: OutputStream
-
-            // If the output file exists, it can be replaced or appended to it
-            stream = FileOutputStream(file)
-
-            // Compress the bitmap
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
-
-            // Flushes the stream
-            stream.flush()
-
-            // Closes the stream
-            stream.close()
-            // display image to gallery
-            MediaScannerConnection.scanFile(
-                context,
-                arrayOf(file.path),
-                arrayOf("image/jpeg"),
-                null
-            )
-        } catch (e: IOException) // Catch the exception
-        {
-            e.printStackTrace()
+            val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            uri = resolver.insert(contentUri, contentValues)
+            if (uri == null) {
+                throw IOException("Failed to create new MediaStore record.")
+            }
+            stream = resolver.openOutputStream(uri)
+            if (stream == null) {
+                throw IOException("Failed to get output stream.")
+            }
+            if (!bitmap.compress(format, 90, stream)) {
+                throw IOException("Failed to save bitmap.")
+            }
+        } catch (e: IOException) {
+            if (uri != null) {
+                // Don't leave an orphan entry in the MediaStore
+                resolver.delete(uri, null, null)
+            }
+            throw e
+        } finally {
+            stream?.close()
         }
-        return Uri.parse(file.absolutePath)
-    }
-
-    private fun addImageToGallery(context: MainActivity, bitmap: Bitmap, photoName: String) {
-        val root: String =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                .toString() + "/ImageTAPI"
-        val myDir = File(root)
-        if (!myDir.exists())
-            myDir.mkdirs()
-        val fileName = "$photoName.png"
-        val file = File(myDir, fileName)
-        Log.d("msg", file.absolutePath)
-        if (file.exists()) file.delete()
-        try {
-            val out = FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.PNG, 90, out)
-            out.flush()
-            out.close()
-            // display image to gallery
-            context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)))
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun addImage(bitmap: Bitmap, nameImage: String) {
-        MediaStore.Images.Media.insertImage(context.contentResolver, bitmap, nameImage, null)
-    }
-
-    private fun addImageIntoGallery(bitmap: Bitmap, nameImage: String) {
-        var fileDir = createFolder(context)
-        var file = File(fileDir, "${nameImage}.jpg")
-        if (file.exists()) file.delete()
-        try {
-            val out = FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.PNG, 90, out)
-            out.flush()
-            out.close()
-            // display image to gallery
-            sendImageToMediaStore(fileDir)
-            //send(file)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun sendImageToMediaStore(outputFile : File) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            val scanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
-            val contentUri = Uri.fromFile(outputFile)
-            scanIntent.data = contentUri
-            context.sendBroadcast(scanIntent)
-        } else {
-            val intent = Intent(
-                Intent.ACTION_MEDIA_MOUNTED,
-                Uri.parse("file://" + Environment.getExternalStorageDirectory())
-            )
-            context.sendBroadcast(intent)
-        }
-    }
-
-    private fun send(outputFile: File) {
-        MediaScannerConnection.scanFile(context, arrayOf(
-            outputFile.absolutePath
-        ),
-            null, OnScanCompletedListener { path, uri ->
-                Log.d("msg", "$path $uri")
-            })
     }
 
 }

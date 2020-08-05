@@ -1,5 +1,6 @@
 package com.example.imagetapi.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,9 +28,7 @@ class GalleryImageAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val file = File(paths[position])
-
-        Picasso.get().load(file).resize(1000, 1000).centerCrop()
+        Picasso.get().load(paths[position]).resize(1000, 1000).centerCrop()
             .into(holder.itemView.imgImageGallery)
 
         holder.itemView.setOnClickListener {

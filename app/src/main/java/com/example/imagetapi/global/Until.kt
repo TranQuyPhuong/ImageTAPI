@@ -21,7 +21,7 @@ fun checkConnectInternet(activity: AppCompatActivity): Boolean {
 }
 
 fun createFolder(context: Context): File {
-    val dir = File(context.filesDir, "ImageTAPI")
+    val dir = File(context.filesDir, "images")
     if (!dir.exists())
         dir.mkdir()
     return dir
