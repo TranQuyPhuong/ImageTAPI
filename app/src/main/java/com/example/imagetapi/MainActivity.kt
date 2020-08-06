@@ -25,7 +25,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.io.File
 import java.net.MalformedURLException
 import java.net.URL
 
@@ -50,9 +49,6 @@ class MainActivity : AppCompatActivity() {
     //instance ImageViewModel
     private lateinit var imageViewModel: ImageViewModel
 
-    //list name image download
-    private var nameImages: ArrayList<String>? = null
-
     //number page default = 1
     var newPage = 1
 
@@ -67,7 +63,6 @@ class MainActivity : AppCompatActivity() {
 
         if (requestPermission()) {
             imgDownload.visibility = View.VISIBLE
-            this.nameImages = getNameImageListDownload()
             if (!checkConnectInternet(this))
                 Toast.makeText(this, "Internet is not Available", Toast.LENGTH_SHORT).show()
             else
@@ -111,11 +106,19 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private fun initComponentView() {
+        setAdapter()
+        setLayoutManager()
+        setRVScrollListener()
+    }
+
+    // verify image downloaded
     private fun compareImageDownloaded(images: ArrayList<ResponsePhoto?>) {
-        if (nameImages != null) {
-            for (j in 0 until nameImages!!.size) {
+        val nameImageDownloaded = getListNameImageToGallery()
+        if (nameImageDownloaded != null) {
+            for (j in 0 until nameImageDownloaded.size) {
                 for (i in 0 until images.size) {
-                    if (images[i]?.id?.compareTo(nameImages!![j].replace(".jpg", "")) == 0) {
+                    if (images[i]?.id?.compareTo(nameImageDownloaded[j]) == 0) {
                         images[i]?.isDownload = true
                         break
                     }
@@ -124,44 +127,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getNameImageListDownload(): ArrayList<String>? {
-        var nameImages: ArrayList<String>? = null
-        val pathImageList = getPathImageListDownload()
 
-        if (pathImageList != null) {
-            nameImages = ArrayList()
-            for (i in 0 until pathImageList.size) {
-                val file = File(pathImageList[i])
-                nameImages.add(file.name)
-            }
+    private fun getListNameImageToGallery(): ArrayList<String>? {
+        val listNameImage = imageViewModel.loadImagesFromSDCard()
+
+        for (i in 0 until listNameImage.size) {
+            listNameImage[i] = listNameImage[i].replace(".jpg", "")
         }
-        return nameImages
+
+        return listNameImage
     }
 
-    private fun getPathImageListDownload(): ArrayList<String>? {
-        return imageViewModel.loadImagesFromSDCard()
-    }
-
-    private fun initComponentView() {
-        setAdapter()
-        setLayoutManager()
-        setRVScrollListener()
-    }
-
+    /**
+     *   Select multi image to download
+     *   remove image to select when this image downloaded
+     * */
     private fun getChooseImages(): ArrayList<ResponsePhoto> {
         // list image choose to download
         val param = imageAdapter.getChooseImages()
-        val imageDownloaded = getNameImageListDownload()
-        if (imageDownloaded != null || imageDownloaded!!.size != 0) {
-            for (i in 0 until imageDownloaded.size) {
-                for (j in 0 until param.size) {
-                    if (param[j].id.compareTo(imageDownloaded[i].replace(".jpg", "")) == 0) {
-                        param.removeAt(j)
-                        break
+        val nameImage = getListNameImageToGallery()
+        if (nameImage != null) {
+            if (nameImage.size != 0) {
+                for (i in 0 until nameImage.size) {
+                    for (j in 0 until param.size) {
+                        if (param[j].id.compareTo(nameImage[i]) == 0) {
+                            param.removeAt(j)
+                            break
+                        }
                     }
                 }
             }
-
         }
 
         return param
@@ -282,7 +277,6 @@ class MainActivity : AppCompatActivity() {
             REQUEST_EXTERNAL_STORAGE -> {
                 if (grantResults[0] === PackageManager.PERMISSION_GRANTED) {
                     imgDownload.visibility = View.VISIBLE
-                    this.nameImages = getNameImageListDownload()
                     if (!checkConnectInternet(this))
                         Toast.makeText(this, "Internet is not Available", Toast.LENGTH_SHORT).show()
                     else

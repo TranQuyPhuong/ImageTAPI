@@ -10,7 +10,6 @@ import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.edit_image.*
 import kotlinx.android.synthetic.main.item_loading.*
-import java.io.File
 
 class ImageDialogFragment : Fragment() {
 
@@ -44,7 +43,7 @@ class ImageDialogFragment : Fragment() {
         position = arguments?.getInt("position")!!
 
         if (path != null) {
-            Picasso.get().load(File(path)).into(editImage, object : Callback {
+            Picasso.get().load(path).into(editImage, object : Callback {
                 override fun onSuccess() {
                     if (itemLoadingMain != null)
                         itemLoadingMain.visibility = View.GONE
@@ -64,7 +63,7 @@ class ImageDialogFragment : Fragment() {
 
         imbDelete.setOnClickListener {
             activity?.supportFragmentManager?.popBackStack()
-            mListener.removeImage(position)
+            mListener.deleteImage(position)
         }
     }
 
@@ -73,7 +72,7 @@ class ImageDialogFragment : Fragment() {
     }
 
     interface ListenerActionDetailImage {
-        fun removeImage(position: Int)
+        fun deleteImage(position: Int)
     }
 
 }

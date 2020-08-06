@@ -1,6 +1,7 @@
 package com.example.imagetapi
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -8,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import com.example.imagetapi.datamannage.dataclass.ImageDataClass
 import com.example.imagetapi.fragment.PhotosFragment
 import com.example.imagetapi.viewmodel.ImageViewModel
 
@@ -37,13 +39,13 @@ class GalleryActivity : AppCompatActivity() {
 
         if (requestPermission()) {
 //            imageViewModel.loadImage()
-            val paths = imageViewModel.loadImagesFromSDCard()
+            val paths = imageViewModel.loadImagesFromStorage()
             addFragment(paths)
         }
 
     }
 
-    private fun addFragment(path: ArrayList<String>) {
+    private fun addFragment(path: ArrayList<ImageDataClass>) {
         val transaction = supportFragmentManager.beginTransaction()
         val photoFragment = PhotosFragment.newInstance(path)
         transaction.add(R.id.frameContainerGallery, photoFragment)
@@ -77,7 +79,7 @@ class GalleryActivity : AppCompatActivity() {
     ) {
         when (requestCode) {
             REQUEST_EXTERNAL_STORAGE -> if (grantResults[0] === PackageManager.PERMISSION_GRANTED) {
-                val paths = imageViewModel.loadImagesFromSDCard()
+                val paths = imageViewModel.loadImagesFromStorage()
                 addFragment(paths)
             }
             else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
