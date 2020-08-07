@@ -1,6 +1,9 @@
 package com.example.imagetapi.global
 
+import android.app.AlertDialog
+import android.app.Dialog
 import android.content.Context
+import android.content.DialogInterface
 import android.net.ConnectivityManager
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
@@ -25,4 +28,16 @@ fun createFolder(context: Context): File {
     if (!dir.exists())
         dir.mkdir()
     return dir
+}
+
+fun createDialog(context: Context, content: String, funcOpenSetting: (DialogInterface, Int) -> Unit) {
+    val builder = AlertDialog.Builder(context)
+    builder.setTitle("Why provide permission")
+    builder.setMessage(content)
+    builder.setPositiveButton("Permission Setting", DialogInterface.OnClickListener(function = funcOpenSetting))
+    builder.setNegativeButton("Cancel") { dialog, which ->  
+        dialog.cancel()
+    }
+    val dialog = builder.create()
+    dialog.show()
 }

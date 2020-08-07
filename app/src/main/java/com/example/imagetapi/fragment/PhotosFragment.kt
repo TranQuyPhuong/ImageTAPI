@@ -1,5 +1,6 @@
 package com.example.imagetapi.fragment
 
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -19,6 +20,7 @@ class PhotosFragment : Fragment(),
     private lateinit var galleryAdapter: GalleryImageAdapter
     private lateinit var dialog: ImageDialogFragment
     private lateinit var layoutManager: StaggeredGridLayoutManager
+    private lateinit var mListenerDelete: ListenerDeleteImage
 
     companion object {
         @JvmStatic
@@ -28,6 +30,10 @@ class PhotosFragment : Fragment(),
                 bundle.putParcelableArrayList("paths", photos)
                 arguments = bundle
             }
+    }
+
+    fun createInstanceListener(listener: ListenerDeleteImage) {
+        mListenerDelete = listener
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,9 +84,11 @@ class PhotosFragment : Fragment(),
 
     private fun deleteItem(position: Int) {
         removeImageIntoGallery(position)
+        mListenerDelete.deleteImage(paths[position].nameImage!!)
         paths.removeAt(position)
         galleryAdapter.notifyItemRemoved(position)
         galleryAdapter.notifyItemRangeChanged(position, paths.size)
+
     }
 
     private fun removeImageIntoGallery(position: Int): Int {
@@ -95,4 +103,9 @@ class PhotosFragment : Fragment(),
     override fun clickItemImage(position: Int) {
         paths[position].path?.let { showDialog(it, position) }
     }
+
+    interface ListenerDeleteImage {
+        fun deleteImage(imageDeleted: String)
+    }
+
 }

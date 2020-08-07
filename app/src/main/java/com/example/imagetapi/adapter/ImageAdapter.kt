@@ -98,6 +98,10 @@ class ImageAdapter(private var photos: ArrayList<ResponsePhoto?>) :
         return images
     }
 
+    fun getAllImage() : ArrayList<ResponsePhoto?> {
+        return photos
+    }
+
     class ImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
     class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)

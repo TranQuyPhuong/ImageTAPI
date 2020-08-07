@@ -117,7 +117,7 @@ class DownloadImage(
 
     @Throws(IOException::class)
     private fun saveBitmap(contextParam: Context = context, bitmap: Bitmap,
-                           format: CompressFormat = CompressFormat.PNG,
+                           format: CompressFormat = CompressFormat.JPEG,
                            mimeType: String = "image/jpeg",
                            displayName: String) {
         val relativeLocation = Environment.DIRECTORY_PICTURES
