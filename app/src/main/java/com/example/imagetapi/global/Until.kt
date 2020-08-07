@@ -1,10 +1,12 @@
 package com.example.imagetapi.global
 
 import android.app.AlertDialog
-import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
 
@@ -15,12 +17,37 @@ const val VIEW_TYPE_ITEM = 0
 // key_access
 const val keyAccess = "Dq7t7v4s6jR-5hwHV1r9v8wmhlaY-NIi4zlbriJTH44"
 
-// Internet
-fun checkConnectInternet(activity: AppCompatActivity): Boolean {
+// Connect Internet
+fun checkConnectInternet(context: AppCompatActivity): Boolean {
+    var result = false
     val connectivityManager =
-        activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    val networkInfo = connectivityManager.activeNetworkInfo
-    return networkInfo != null && networkInfo.isConnected
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val networkCapabilities = connectivityManager.activeNetwork ?: return false
+        val actNw =
+            connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
+        result = when {
+            actNw.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+            actNw.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+            actNw.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+            else -> false
+        }
+    }
+    else {
+        connectivityManager.run {
+            connectivityManager.activeNetworkInfo?.run {
+                result = when (type) {
+                    ConnectivityManager.TYPE_WIFI -> true
+                    ConnectivityManager.TYPE_MOBILE -> true
+                    ConnectivityManager.TYPE_ETHERNET -> true
+                    else -> false
+                }
+
+            }
+        }
+    }
+
+    return result
 }
 
 fun createFolder(context: Context): File {
@@ -30,14 +57,29 @@ fun createFolder(context: Context): File {
     return dir
 }
 
-fun createDialog(context: Context, content: String, funcOpenSetting: (DialogInterface, Int) -> Unit) {
+fun createDialog(
+    context: Context,
+    content: String,
+    funcOpenSetting: (DialogInterface, Int) -> Unit
+) {
     val builder = AlertDialog.Builder(context)
     builder.setTitle("Why provide permission")
     builder.setMessage(content)
-    builder.setPositiveButton("Permission Setting", DialogInterface.OnClickListener(function = funcOpenSetting))
-    builder.setNegativeButton("Cancel") { dialog, which ->  
+    builder.setPositiveButton(
+        "Permission Setting",
+        DialogInterface.OnClickListener(function = funcOpenSetting)
+    )
+    builder.setNegativeButton("Cancel") { dialog, _ ->
         dialog.cancel()
     }
     val dialog = builder.create()
     dialog.show()
+}
+
+fun showToastShort(context: Context, content: String) {
+    Toast.makeText(context, content, Toast.LENGTH_SHORT).show()
+}
+
+fun showToastLong(context: Context, content: String) {
+    Toast.makeText(context, content, Toast.LENGTH_LONG).show()
 }

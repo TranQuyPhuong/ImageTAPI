@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.example.imagetapi.datamannage.dataclass.ImageDataClass
@@ -41,12 +42,7 @@ class GalleryActivity : AppCompatActivity(), PhotosFragment.ListenerDeleteImage 
 
         imageViewModel.getImageList().observe(this, valueObserver)
 
-        if (requestPermission()) {
-//            imageViewModel.loadImage()
-            val paths = imageViewModel.loadImagesFromStorage()
-            addFragment(paths)
-        }
-
+        if (requestPermission()) createListImageGalleryFragment()
     }
 
     private fun addFragment(path: ArrayList<ImageDataClass>) {
@@ -58,20 +54,11 @@ class GalleryActivity : AppCompatActivity(), PhotosFragment.ListenerDeleteImage 
     }
 
     private fun requestPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            true
-        } else {
-            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED
-            ) {
-                true
-            } else {
-
-                ActivityCompat.requestPermissions(
-                    this,
-                    PERMISSIONS_STORAGE,
-                    REQUEST_EXTERNAL_STORAGE
-                )
+        return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) true
+        else {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)  true
+            else {
+                ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE)
                 false
             }
         }
@@ -84,12 +71,15 @@ class GalleryActivity : AppCompatActivity(), PhotosFragment.ListenerDeleteImage 
         grantResults: IntArray
     ) {
         when (requestCode) {
-            REQUEST_EXTERNAL_STORAGE -> if (grantResults[0] === PackageManager.PERMISSION_GRANTED) {
-                val paths = imageViewModel.loadImagesFromStorage()
-                addFragment(paths)
-            }
+            REQUEST_EXTERNAL_STORAGE -> if (grantResults[0] === PackageManager.PERMISSION_GRANTED) createListImageGalleryFragment()
+
             else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
+    }
+
+    private fun createListImageGalleryFragment() {
+        val paths = imageViewModel.loadImagesFromStorage()
+        addFragment(paths)
     }
 
     override fun deleteImage(imageDeleted: String) {

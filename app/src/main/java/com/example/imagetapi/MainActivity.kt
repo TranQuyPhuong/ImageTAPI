@@ -24,6 +24,7 @@ import com.example.imagetapi.datamannage.APIInterface
 import com.example.imagetapi.datamannage.dataclass.ResponsePhoto
 import com.example.imagetapi.global.checkConnectInternet
 import com.example.imagetapi.global.createDialog
+import com.example.imagetapi.global.showToastShort
 import com.example.imagetapi.viewmodel.ImageViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Call
@@ -209,6 +210,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun loadMorePhoto() {
+        if (!checkConnectInternet(this)) {
+            showToastShort(this, getString(R.string.message_error_network))
+            return
+        }
         val call = apiService.getPhotos(page = newPage)
         call.enqueue(object : Callback<ArrayList<ResponsePhoto?>> {
             override fun onFailure(call: Call<ArrayList<ResponsePhoto?>>, t: Throwable) {
@@ -285,6 +290,11 @@ class MainActivity : AppCompatActivity() {
                             createDialog(this, "Permission is necessary to use your app") { _, _ ->
                                 startActivity(Intent(Settings.ACTION_SETTINGS))
                             }
+                        else {
+                            //Never ask again selected, or device policy prohibits the app from having that permission.
+                            //So, disable that feature, or fall back to another situation...
+                            Log.d("msg", "do nothing")
+                        }
                     }
                 }
             }
